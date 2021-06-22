@@ -9,7 +9,7 @@ data = []
 serdev1 = '/dev/ttyUSB0'
 s = serial.Serial(serdev1, 9600)
 filename="data_file.txt"
-f   = open("data_file.txt", "a")
+f   = open("data_file.txt", "a", encoding='UTF-8')
 
 
 s.write("+++".encode())
@@ -54,8 +54,8 @@ print(char.decode())
 
 print("start sending RPC")
 while True:
-    s    = s.readline()
-    line = s.decode('utf-8').replace('\r\n','')
+    s = s.readline()
+    line = s.decode('utf-8').replace(",", "\r\n")
     time.sleep(.1)
     f.write(line+"\r\n")    # Appends output to file
 s.close()

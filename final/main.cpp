@@ -50,7 +50,7 @@ void loop()
 {    
   for(int i = 0; i < n; i++){
     char str[7];
-    sprintf(str, "%.3f\n", dis[i]);
+    sprintf(str, "%.3f ,", dis[i]);
     xbee.write(str,7);
   }
 }
@@ -241,13 +241,14 @@ int main(){
                 }
                 else{
                     car.stop();
+                    loop();
                     ThisThread::sleep_for(1s);
                     // break;
                 }
             }
             else if(recv[0] =='k'){
                 car.stop();
-                car.turn_R(10);
+                car.turn_R(20);
                 ping.output();
                 ping = 0; wait_us(200);
                 ping = 1; wait_us(5);
