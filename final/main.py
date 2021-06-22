@@ -27,17 +27,24 @@ while(True):
    if (line): img.draw_line(line.line(),color =127)
 
 
-   print(line.rho())
-   if(line.rho()<0):
-     dir = "r"
-   elif(line.rho()>0):
-     dir = "l"
+
+   if(170< line.theta()<=180 or 0<=line.theta()<10):
+     dir = 'f'
+   else:
+     if(line.rho()<0):
+       dir = "l"
+     elif(line.rho()>0):
+       dir = "r"
+   print(line.theta())
    print_arg=(dir)
    print(dir)
 
    uart.write(("%s" % print_arg).encode())
    img2 = sensor.snapshot()
    if (img2.find_apriltags(fx=f_x, fy=f_y, cx=c_x, cy=c_y)): # defaults to TAG36H11
+      dir = "s"
+      print_arg=(dir)
+      uart.write(("%s" % print_arg).encode())
       break
 
 while(True):
@@ -48,7 +55,7 @@ while(True):
       img.draw_cross(tag.cx(), tag.cy(), color = (0, 255, 0))
       # The conversion is nearly 6.2cm to 1 -> translation
       #print_arg(tag.y_rotation())
-      print(tag.z_rotation())
+      #print(tag.z_rotation())
       if(3.1<tag.z_rotation()<3.2):
         dir = "s"
       else:
