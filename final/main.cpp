@@ -13,6 +13,9 @@ volatile int steps;
 volatile int last;
 BBCar car(pin5, pin6, servo_ticker);
 char recv[1];
+int s=1;
+int n =0;
+float dis[1000];
 
 //RPC
 void follow_l(Arguments *in, Reply *out);
@@ -26,8 +29,6 @@ RPCFunction rpc_output(&output,"output");
 DigitalInOut ping(D10);
 Timer t;
 float val=0.0f;
-double dis[50];
-int n = 0;
 
 //xbee
 void xbee_rx_interrupt(void);
@@ -35,6 +36,7 @@ void xbee_rx(void);
 void reply_messange(char *xbee_reply, char *messange);
 void check_addr(char *xbee_reply, char *messenger);
 EventQueue queue(32 * EVENTS_EVENT_SIZE);
+EventQueue queue2(32 * EVENTS_EVENT_SIZE);
 Thread t1;
 Thread t2;
 
@@ -42,6 +44,15 @@ void encoder_control() {
    int value = encoder;
    if (!last && value) steps++;
    last = value;
+}
+
+void loop()
+{    
+  for(int i = 0; i < n; i++){
+    char str[7];
+    sprintf(str, "%.3f\n", dis[i]);
+    xbee.write(str,7);
+  }
 }
 
 void follow_l(Arguments *in, Reply *out){  
@@ -125,6 +136,8 @@ void output(Arguments *in, Reply *out){
 
 int main(){
    uart.set_baud(9600);
+   pc.set_baud(9600);
+   xbee.set_baud(9600);
 
    char xbee_reply[4];
 
@@ -172,7 +185,7 @@ int main(){
    xbee.set_blocking(false);
    xbee.sigio(mbed_event_queue()->event(xbee_rx_interrupt));
 
-   t2.start(callback(&queue, &EventQueue::dispatch_forever));
+   t2.start(callback(&queue2, &EventQueue::dispatch_forever));
 
    encoder_ticker.attach(&encoder_control, 10ms);
    while(1){
@@ -180,57 +193,86 @@ int main(){
             uart.read(recv, sizeof(recv));
             pc.write(recv, sizeof(recv));
             printf("%c",recv);
-            if(recv[0] == 'r'){
-               printf("now is right!");
+            if(recv[0] == 'f'){
+                car.stop();
+               car.goStraight(20);
+                //     while(steps*6.5*3.14/32 < 2) {
+                //             if(recv[0]=='s'|| recv[0]=='k'){
+                //                 car.stop();
+                //                 break;
+                //             }
+                //             ThisThread::sleep_for(100ms);
+                //     }
+                }
+            else if(recv[0] == 'r'){
                car.stop();
                steps = 0;
                last = 0;
                //正要往右
-               car.turn(50,-0.6);
-               while(steps*6.5*3.14/32 < 5) {
+               car.turn(20,-0.6);
+               while(steps*6.5*3.14/32 < 2) {
+                      if(recv[0]=='s'|| recv[0]=='k'){
+                          car.stop();
+                          break;
+                      }
                      ThisThread::sleep_for(100ms);
                }
                car.stop();
             }
             else if(recv[0] == 'l'){
-               printf("now is left!");
                car.stop();
                steps = 0;
                last = 0;
-               car.turn(50,0.8);
-               while(steps*6.5*3.14/32 < 5) {
+               car.turn(20,0.8);
+               while(steps*6.5*3.14/32 < 2) {
+                      if(recv[0]=='s'|| recv[0]=='k' ){
+                          car.stop();
+                          break;
+                      }                   
                      ThisThread::sleep_for(100ms);
                }
                car.stop();
             }  
             else if(recv[0] =='s'){
-                car.turn_R(20);
-                ThisThread::sleep_for(2s);
-                car.stop();
+                if(s ==1 ){
+                    car.stop();
+                    // ThisThread::sleep_for(100ms);
+                    car.turn_R(20);
+                }
+                else{
+                    car.stop();
+                    ThisThread::sleep_for(1s);
+                    // break;
+                }
             }
             else if(recv[0] =='k'){
-               printf("now is offset!");
-               steps = 0;
-               last = 0;
-               car.turn_R(20);
                 car.stop();
-                car.turn_R(20);
+                car.turn_R(10);
                 ping.output();
                 ping = 0; wait_us(200);
                 ping = 1; wait_us(5);
                 ping = 0; wait_us(5);
-
                 ping.input();
                 while(ping.read() == 0);
                 t.start();
                 while(ping.read() == 1);
                 val = t.read();
+                dis[n]= val*17700.4f;
                 printf("Ping = %lf\r\n", val*17700.4f);
-                xbee.write("%f\r\n", val*17700.4f);
                 t.stop();
                 t.reset();
+                s++;
+                n++;
+            }
+            else{
+                break;
             }
       }
+   }
+    loop();
+   int length = sizeof(dis) / sizeof(dis[0]);
+   for(int n = 0; n < length; n++){
+        printf("%f",dis[n]);
    }
 }
 

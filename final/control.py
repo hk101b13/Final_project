@@ -1,15 +1,16 @@
+from __future__ import print_function
 import matplotlib.pyplot as plt
 import numpy as np
 import serial
 import time
+import io, datetime
 data = []
 # XBee setting
 serdev1 = '/dev/ttyUSB0'
 s = serial.Serial(serdev1, 9600)
+filename="data_file.txt"
+f   = open("data_file.txt", "a")
 
-# plot_setting
-serdev2 = '/dev/ttyACM0'
-s2 = serial.Serial(serdev2,9600)
 
 s.write("+++".encode())
 char = s.read(2)
@@ -53,10 +54,8 @@ print(char.decode())
 
 print("start sending RPC")
 while True:
-    # send RPC to remote
-
-    s.write("/rotate/run \n\r".encode())
-    time.sleep(20)
-    s.write("/output/run \n\r".encode())
-
+    s    = s.readline()
+    line = s.decode('utf-8').replace('\r\n','')
+    time.sleep(.1)
+    f.write(line+"\r\n")    # Appends output to file
 s.close()
